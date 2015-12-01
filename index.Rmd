@@ -1,0 +1,227 @@
+---
+title: "Birth Rate Analysis"
+author: "Soutik Chakraborty"
+---
+
+```{r, message = FALSE}
+
+# Loading standard packages
+library(ggplot2)
+library(dplyr)
+library(Sleuth3)
+library(reshape2)
+```
+
+Davis et al. (1998)2 collected data on the proportion of births that were male in Denmark, the Netherlands, Canada, and the United States for selected years. Davis et al. argue that the proportion of male births is declining in these countries. We will explore this hypothesis.
+
+```{r}
+# We first download the data from "Sleuth3" package
+birthData <- ex0724
+
+#Let's look at the dataset and explore it
+head(birthData)
+```
+
+We see that the data includes the year, proportion of male birth in Denmark, Netherlands, Canada and USA from 1950 to 1995. 
+
+Our first task is to fit simple linear models for the yearly proportion of male birth for each country. To do this we will need to use the 'lm' function and create 4 models - 1 for each of the 4 countries and then we will try and plot them on a scatter plot. Before any of it let us explore the data using some scatter plots to see if there are any visual trends that we can see.
+
+```{r, warning=FALSE}
+# Creating a function to allow for multiplotting usign ggplot2. Code 
+# taken directly from StackOverflow (linked below)
+# http://stackoverflow.com/questions/24387376/r-weird-error-could-not-find-function-multiplot
+
+multiplot <- function(..., plotlist = NULL, file, cols = 1, layout = NULL) {
+  require(grid)
+
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  if (is.null(layout)) {
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                 ncol = cols, nrow = ceiling(numPlots/cols))
+}
+
+if (numPlots == 1) {
+print(plots[[1]])
+
+} else {
+grid.newpage()
+pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+for (i in 1:numPlots) {
+  matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+  print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                  layout.pos.col = matchidx$col))
+ }
+}
+}
+```
+
+```{r, warning=FALSE}
+
+# Generating the plots for each of the countries. We use ggplot commands to
+# create a scatter plot of Year v/s birthrate in each of the 4 countries.
+g.Denmark <- ggplot(data = birthData, aes(x = Year, y = Denmark)) + 
+  ggtitle("Scatter Plot for Birthrate in Denmark") + 
+  geom_point(alpha = 0.5) + xlab("Year") + ylab("Male Birthrate")
+  
+# Creating plot variable for Netherlands
+g.Netherlands <- ggplot(data = birthData, aes(x = Year, y = Netherlands)) + 
+  ggtitle("Scatter Plot for Birthrate in Netherlands") + 
+  geom_point(alpha = 0.5) + xlab("Year") + ylab("Male Birthrate")
+
+# Creating plot variable for Canada
+g.Canada <- ggplot(data = birthData, aes(x = Year, y = Canada)) + 
+  ggtitle("Scatter Plot for Birthrate in Canada") + 
+  geom_point(alpha = 0.5) + xlab("Year") + ylab("Male Birthrate")
+
+# Creating plot variable for USA
+g.USA <- ggplot(data = birthData, aes(x = Year, y = USA)) + 
+  ggtitle("Scatter Plot for Birthrate in USA") + 
+  geom_point(alpha = 0.5) + xlab("Year") + ylab("Male Birthrate")
+
+
+# Using the 'multiplot' function created above to plot all the graphs
+# in a 2X2 grid. 
+multiplot(g.Denmark, g.Netherlands, g.Canada, g.USA, cols = 2)
+```
+
+We don't see any major trends in the birthrate in Denmark but for the other 3 countries we do see a decreasing trend. We do need to verify this by fitting a simple linear model using the 'lm' function and then analyzing the co-efficients. The model will be of the following formula
+
+          Y = B1*X + B0
+          Where Y = Birthrate of the country 
+                X = Year
+                B1 = Slope or co-efficient of Year in LM
+                B0 = Intercept
+
+```{r}
+# Fitting the linear model for Denmark
+Denmark.lm <- lm(Denmark ~ Year, data = birthData)
+summary(Denmark.lm)
+```
+
+The estimated linear model for Denmark is thus
+        
+        Birthrate ~ -4.289e-05*Year + 5.987e-01
+
+This shows that the Year affects very little the final outcome of the birthrate. (Which is true based on our initial scatterplot analysis.) Year is statistically insignificant as the t-value is < 1 even though the p-value is < 0.05
+
+Overall but the trend is a decrease in the birthrate of males across the year which is validated by the negative (-ve) sign before the Year co-efficient.
+
+We now will test it for other countries and write our analysis in points.
+
+```{r}
+
+# Fitting the linear model for Netherlands
+Netherlands.lm <- lm(Netherlands ~ Year, data = birthData)
+summary(Netherlands.lm)
+```
+
+The formula for Netherlands is
+        Birthrate ~ -8.085e-05*Year + 6.274e-01
+        
+* Negative trend between Year and birthrate
+* The trend is effectively very small as per 'Year' 'Birthrate' reduces by only 8.085e-05 than the previous year.
+* Statistically insignificant as the t-value is < 1 even though p-value is < 0.05
+
+```{r}
+# Fitting the linear model for Canada
+Canada.lm <- lm(Canada ~ Year, data = birthData)
+summary(Canada.lm)
+```
+
+The formula for Canada is
+        Birthrate ~ -1.112e-04*Year + 7.338e-01
+        
+* Negative trend between Year and birthrate
+* The trend is effectively very small as per 'Year' 'Birthrate' reduces by only 1.112e-04 than the previous year.
+* Statistically insignificant as the t-value is < 1 even though p-value is < 0.05
+
+```{r}
+# Fitting the linear model for USA
+USA.lm <- lm(USA ~ Year, data = birthData)
+summary(USA.lm)
+```
+
+The formula for USA is
+        Birthrate ~ -5.242e-05*Year + 6.201e-01
+        
+* Negative trend between Year and birthrate
+* The trend is effectively very small as per 'Year' 'Birthrate' reduces by only -5.242e-05 than the previous year.
+* Statistically insignificant as the t-value is < 1 even though p-value is < 0.05
+
+\
+
+If we were to show the linear model fits on a graph with scatterplot we can visualize the trend more easily. For this we will plot a scatterplot, color it based on the country and then plot the lines of regression over that. 
+
+```{r, warning=FALSE}
+# Using ggplot pacakge we will plot the scatterplot and add a layer of
+# the regression lines based on the co-efficients that we got. We will use
+# 'multiplot' function again to get a 2X2 plot on our screen
+
+# Creating scatterplot for Denmark and adding the regression line
+g.Denmark <- ggplot(data = birthData, aes(x = Year, y = Denmark)) +
+  ggtitle("Year v/s Denmark Male birthrate") + geom_point(alpha = 0.5) +
+  geom_abline(intercept = Denmark.lm$coefficients[1], 
+              slope = Denmark.lm$coefficients[2])
+
+# Creating scatterplot for Netherlands and adding the regression line
+g.Netherlands <- ggplot(data = birthData, aes(x = Year, y = Netherlands)) +
+  ggtitle("Year v/s Netherlands Male birthrate") + geom_point(alpha = 0.5) +
+  geom_abline(intercept = Netherlands.lm$coefficients[1], 
+              slope = Netherlands.lm$coefficients[2])
+
+# Creating scatterplot for Canada and adding the regression line
+g.Canada <- ggplot(data = birthData, aes(x = Year, y = Canada)) +
+  ggtitle("Year v/s Canada Male birthrate") + geom_point(alpha = 0.5) +
+  geom_abline(intercept = Canada.lm$coefficients[1], 
+              slope = Canada.lm$coefficients[2])
+
+# Creating scatterplot for USA and adding the regression line
+g.USA <- ggplot(data = birthData, aes(x = Year, y = USA)) +
+  ggtitle("Year v/s USA Male birthrate") + geom_point(alpha = 0.5) +
+  geom_abline(intercept = USA.lm$coefficients[1], 
+              slope = USA.lm$coefficients[2])
+
+# Using the multiplot function created before plotting 4 graphs 
+# in a 2X2 grid
+multiplot(g.Denmark, g.Netherlands, g.Canada, g.USA, cols = 2)
+```
+
+
+As we see that the linear model shows us a decreasing trend in the birthrates across all the 4 countries. But is it really the valuable? Can we fit a better model by using only a horizontal line with the equation
+        
+        Year = B0
+        where B0 = intercept from linear regression
+        
+Let us try this and obtain the T-statistic for all these models.
+
+```{r}
+
+# We use the co-efficients obtained from previous analysis and 
+# obtain the t-statistic test to see if such models are useful
+
+# Finding the linear models with no slope co-eff
+# We make the predictor varaible "Denmark" offset 
+# which makes the model ignore that variable and only
+# calculate the intercept or residual errors
+Denmark.lm.C <- lm(Year ~ offset(Denmark), data = birthData)
+summary(Denmark.lm.C)
+
+#Checking the same for the other countries.
+Netherlands.lm.C <- lm(Year ~ offset(Netherlands), data = birthData)
+summary(Netherlands.lm.C)
+
+Canada.lm.C <- lm(Year ~ offset(Canada), data = birthData)
+summary(Canada.lm.C)
+
+USA.lm.C <- lm(Year ~ offset(USA), data = birthData)
+summary(USA.lm.C)
+```
+
+As we can see that the co-efficient has almost 0 p-value and a very high t-stat test value which suggests that it is a very important indicator of the model. Using this type of model suggests that there is no trend in the birthrate of male across all the countries. If we plot all of them below there is only going to be evidence that the birthrate is constant across the years.
+
+But we see that there is a higher error rate than our previous model which suggests that the model does come with some errors and as the trend of decline is very little, there might be some evidence of it that we are not getting in this type of model.
